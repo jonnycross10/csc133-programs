@@ -57,6 +57,7 @@ public class SimplePaintObjects extends Application {
         colorBox.setPadding(new Insets(5,5,5,5));
 
 
+
         //root of application
         HBox mainBox = new HBox();
         mainBox.setSpacing(PADDING); //TODO may be wrong, did he mean spacing?
@@ -85,6 +86,11 @@ public class SimplePaintObjects extends Application {
 
     }
 
+    Runnable myClearAction = () -> {
+        //clears the canvas
+        System.out.println("Clear button pressed");
+    };
+
     private ArrayList<StackPane> getColorList(){
         ArrayList<StackPane> colors = new ArrayList<StackPane>();
         for(int i=0; i<7; i++){
@@ -100,7 +106,7 @@ public class SimplePaintObjects extends Application {
 
     private StackPane getActionList(){
         //TODO further implementation
-        ActionTool a = new ActionTool();
+        ActionTool a = new ActionTool(this.myClearAction);
         a.getChildren().addAll(a.r, a.label);
         return a;
     }
@@ -174,6 +180,7 @@ public class SimplePaintObjects extends Application {
 }
 
 abstract class AbstractTool extends StackPane{
+    //should be able to set the value of the rectangle
     Color toolBg = SimplePaintObjects.TOOL_RECT_FG;
     Rectangle r = new Rectangle(60,60,toolBg);
 
@@ -206,11 +213,11 @@ class ActionTool extends AbstractTool{
     String text = "Clear";
 
     javafx.scene.control.Label label;
-    Runnable action;
-    public ActionTool(){
+    public ActionTool(Runnable action){
         label = new Label(text);
         label.setFont(Font.font(null, FontWeight.BOLD, 20));
         label.setTextFill(textColor);
+        setOnMouseClicked(e -> action.run());
 
     }
 }
