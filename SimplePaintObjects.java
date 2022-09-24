@@ -5,10 +5,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Pane;
-import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
+import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
@@ -51,17 +48,26 @@ public class SimplePaintObjects extends Application {
         Canvas mainCanvas = new Canvas(600,400);
         VBox toolBox = new VBox();
         toolBox.setSpacing(PADDING);
-        toolBox.setPadding(new Insets(5,0,5,5));
+        toolBox.setPadding(new Insets(5,5,5,5));
         VBox colorBox = new VBox();
         colorBox.setSpacing(PADDING);
         colorBox.setPadding(new Insets(5,5,5,5));
 
+        toolBox.setBackground(new Background(new BackgroundFill(Color.WHITE,
+                CornerRadii.EMPTY,
+                Insets.EMPTY)));
 
+        colorBox.setBackground(new Background(new BackgroundFill(Color.WHITE,
+                CornerRadii.EMPTY,
+                Insets.EMPTY)));
 
         //root of application
         HBox mainBox = new HBox();
         mainBox.setSpacing(PADDING); //TODO may be wrong, did he mean spacing?
-
+        mainBox.setBackground(new Background(new BackgroundFill(Color.LIGHTGREY,
+                CornerRadii.EMPTY,
+                Insets.EMPTY)));
+        mainBox.setPadding(new Insets(5,5,5,5));
         ObservableList list = mainBox.getChildren();
 
         list.addAll(mainCanvas, toolBox, colorBox);
@@ -87,15 +93,25 @@ public class SimplePaintObjects extends Application {
     }
 
     Runnable myClearAction = () -> {
-        //clears the canvas
+        //call clear canvas method
         System.out.println("Clear button pressed");
+    };
+
+    Runnable myColorAction = () -> {
+        //color selected
+        System.out.println("Color Pressed");
+    };
+
+    Runnable myToolAction = () -> {
+        //tool selected
+        System.out.println("Tool pressed");
     };
 
     private ArrayList<StackPane> getColorList(){
         ArrayList<StackPane> colors = new ArrayList<StackPane>();
         for(int i=0; i<7; i++){
             //Question: are these supposed to be ColorTools or just StackPanes
-            ColorTool c = new ColorTool(palette[i]);
+            ColorTool c = new ColorTool(palette[i], this.myColorAction);
 
             //Rectangle rect = new Rectangle(50,50, c.toolColor);//TODO put in constructor of tool
             c.getChildren().add(c.r);
@@ -115,7 +131,7 @@ public class SimplePaintObjects extends Application {
         ArrayList<StackPane> shapes = new ArrayList<>();
         Color toolFg = SimplePaintObjects.TOOL_FG;
         for (int i=0; i<8; i++){
-            ShapeTool shape = new ShapeTool();
+            ShapeTool shape = new ShapeTool(this.myToolAction);
             shape.getChildren().add(shape.r);
             Circle circle = new Circle();
             //TODO add a switch case to draw icons and add to shape
@@ -183,16 +199,17 @@ abstract class AbstractTool extends StackPane{
     //should be able to set the value of the rectangle
     Color toolBg = SimplePaintObjects.TOOL_RECT_FG;
     Rectangle r = new Rectangle(60,60,toolBg);
-
+    //TODO add activate method
 }
 
 class ColorTool extends AbstractTool{
     Color toolColor;
 
-    public ColorTool(Color color){
+    public ColorTool(Color color, Runnable action){
 
         this.toolColor = color;
         this.r.setFill(color);
+        setOnMouseClicked(e -> action.run());
     }
 
     public Color getColor(){
@@ -202,8 +219,8 @@ class ColorTool extends AbstractTool{
 }
 
 class ShapeTool extends AbstractTool{
-    public ShapeTool(){
-
+    public ShapeTool(Runnable action){
+        setOnMouseClicked(e -> action.run());
     }
 }
 
