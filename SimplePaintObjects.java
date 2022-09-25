@@ -317,3 +317,64 @@ class ActionTool extends AbstractTool{
 
     }
 }
+
+interface ShapeObject{
+    ShapeObject currentLineShape = null;
+    void draw();
+    boolean dragUpdate();
+    ShapeObject getPaintShape();
+}
+
+class LineSegmentShape implements ShapeObject{
+    public LineSegmentShape(){
+
+    }
+    public boolean dragUpdate(){
+        return true;
+    }
+
+    public void draw(){
+
+    }
+    public ShapeObject getPaintShape(){
+        return currentLineShape;
+    }
+}
+
+class LineShape implements ShapeObject{
+    public LineShape(){
+
+    }
+    public boolean dragUpdate(){
+        return false;
+    }
+
+    public void draw(){
+
+    }
+    public ShapeObject getPaintShape(){
+        return currentLineShape;
+    }
+}
+
+class FilledPolyShape implements ShapeObject{
+    public FilledPolyShape(){
+
+    }
+    public boolean dragUpdate(){
+        return false;
+    }
+    public void draw(){
+
+    }
+    public ShapeObject getPaintShape(){
+        return currentLineShape;
+    }
+}
+
+//class PointTool extends ShapeTool{
+//
+//    public PointTool(SimplePaintObjects o) {
+//        super(SimplePaintObjects o);
+//    }
+//}
