@@ -16,9 +16,12 @@ import javafx.scene.text.Text;
 import javafx.stage.Stage;
 
 import java.awt.*;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 
 public class SimplePaintObjects extends Application {
+    public ArrayList<AbstractTool> activeTools = new
+            ArrayList<AbstractTool>(); //TODO sorry
 
     public static void main(String[] args) {
         launch(args);
@@ -37,13 +40,17 @@ public class SimplePaintObjects extends Application {
     static final int CELL_W = 60;
     static final int PADDING = 5;
 
+
     private final Color[] palette = {
             Color.BLACK, Color.RED, Color.GREEN, Color.BLUE,
             Color.CYAN, Color.MAGENTA, Color.color(0.95,0.9,0)
     };
+    //arraylist of active tools
+
 
     @Override
     public void start(Stage primaryStage) {
+
         //root's children
         Canvas mainCanvas = new Canvas(600,400);
         VBox toolBox = new VBox();
@@ -73,15 +80,25 @@ public class SimplePaintObjects extends Application {
         list.addAll(mainCanvas, toolBox, colorBox);
 
         //colorBox additions
-        ArrayList<StackPane> colorIcons = getColorList();
+        ArrayList<AbstractTool> colorIcons = getColorList();
 
         colorBox.getChildren().addAll(colorIcons);
         colorBox.getChildren().addAll(getActionList());
 
         //toolBox additions
-        ArrayList<StackPane> toolIcons = getShapeList();
+        ArrayList<AbstractTool> toolIcons = getShapeList();
 
         toolBox.getChildren().addAll(toolIcons);
+
+        //add first color and tool
+        AbstractTool initialColor = colorIcons.get(0);
+        AbstractTool initialTool = toolIcons.get(0);
+        activeTools.add(0,initialColor);
+        activeTools.add(1,initialTool);
+        initialColor.r.setStroke(Color.BLACK);
+        initialColor.r.setStrokeWidth(4);
+        initialTool.r.setStroke(TOOL_RECT_FG);
+        initialTool.r.setStrokeWidth(4);
 
         Pane root = new Pane(mainBox);
         Scene scene = new Scene(root);
@@ -92,26 +109,12 @@ public class SimplePaintObjects extends Application {
 
     }
 
-    Runnable myClearAction = () -> {
-        //call clear canvas method
-        System.out.println("Clear button pressed");
-    };
 
-    Runnable myColorAction = () -> {
-        //color selected
-        System.out.println("Color Pressed");
-    };
-
-    Runnable myToolAction = () -> {
-        //tool selected
-        System.out.println("Tool pressed");
-    };
-
-    private ArrayList<StackPane> getColorList(){
-        ArrayList<StackPane> colors = new ArrayList<StackPane>();
+    private ArrayList<AbstractTool> getColorList(){
+        ArrayList<AbstractTool> colors = new ArrayList<AbstractTool>();
         for(int i=0; i<7; i++){
             //Question: are these supposed to be ColorTools or just StackPanes
-            ColorTool c = new ColorTool(palette[i], this.myColorAction);
+            ColorTool c = new ColorTool(palette[i],this);
 
             //Rectangle rect = new Rectangle(50,50, c.toolColor);//TODO put in constructor of tool
             c.getChildren().add(c.r);
@@ -122,16 +125,16 @@ public class SimplePaintObjects extends Application {
 
     private StackPane getActionList(){
         //TODO further implementation
-        ActionTool a = new ActionTool(this.myClearAction);
+        ActionTool a = new ActionTool();
         a.getChildren().addAll(a.r, a.label);
         return a;
     }
 
-    private ArrayList<StackPane> getShapeList(){
-        ArrayList<StackPane> shapes = new ArrayList<>();
+    private ArrayList<AbstractTool> getShapeList(){
+        ArrayList<AbstractTool> shapes = new ArrayList<>();
         Color toolFg = SimplePaintObjects.TOOL_FG;
         for (int i=0; i<8; i++){
-            ShapeTool shape = new ShapeTool(this.myToolAction);
+            ShapeTool shape = new ShapeTool(this);
             shape.getChildren().add(shape.r);
             Circle circle = new Circle();
             //TODO add a switch case to draw icons and add to shape
@@ -193,23 +196,87 @@ public class SimplePaintObjects extends Application {
         }
         return shapes;
     }
+    public AbstractTool getActiveTool(AbstractTool tool){
+        return activeTools.get(tool.toolType);
+    }
+    public void setActiveTool(AbstractTool tool){
+        activeTools.set(tool.toolType, tool);
+    }
 }
 
 abstract class AbstractTool extends StackPane{
+    SimplePaintObjects ob;
     //should be able to set the value of the rectangle
     Color toolBg = SimplePaintObjects.TOOL_RECT_FG;
     Rectangle r = new Rectangle(60,60,toolBg);
+    boolean clearClicked = false;
+    int toolType;
     //TODO add activate method
+    public void activate(AbstractTool s){
+
+        ob = s.ob;
+        System.out.println("Clicked tool type " + s.toolType);
+
+
+        //calls getters and setters
+        if(s.toolType ==0 && s !=ob.getActiveTool(s)){
+            //color clicked
+            deactivate(ob.getActiveTool(s), s.toolType);
+            ob.setActiveTool(s);
+            //change size of box
+            s.r.setStroke(((ColorTool) s).getColor());
+            s.r.setStrokeWidth(4);
+
+        }
+        else if(s.toolType ==1 && s !=ob.getActiveTool(s)){
+            //tool clicked
+            deactivate(ob.getActiveTool(s), s.toolType);
+            ob.setActiveTool(s);
+            //change size of box
+            s.r.setStroke(Color.LIGHTCORAL);
+            s.r.setStrokeWidth(4);
+
+        }
+        else if(s.toolType ==2){
+            //clear clicked
+            if(!clearClicked){
+                System.out.println("if");
+                s.r.setStroke(Color.LIGHTCORAL);
+                s.r.setStrokeWidth(2);
+            }
+            else{
+                System.out.println("else");
+                s.r.setFill(Color.LIGHTCORAL);
+                s.r.setStrokeWidth(0);
+            }
+            clearClicked = !clearClicked;
+        }
+
+    }
+    public void deactivate(AbstractTool s, int tool){
+        //calls getters and setters
+        //change size of box to be smaller
+        if(tool ==0) {
+            System.out.println("deactivating tool");
+            //s.r.setStroke(((ColorTool) s).getColor());
+            s.r.setStrokeWidth(0);
+        }
+        else if(tool==1){
+            System.out.println("deactivating tool");
+            //s.r.setStroke(Color.LIGHTCORAL);
+            s.r.setStrokeWidth(0);
+        }
+    }
 }
 
 class ColorTool extends AbstractTool{
     Color toolColor;
-
-    public ColorTool(Color color, Runnable action){
-
+    public ColorTool(Color color, SimplePaintObjects ob) {
+        this.ob=ob;
+        toolType=0;
         this.toolColor = color;
         this.r.setFill(color);
-        setOnMouseClicked(e -> action.run());
+        setOnMouseClicked(e -> activate(this));
     }
 
     public Color getColor(){
@@ -219,22 +286,34 @@ class ColorTool extends AbstractTool{
 }
 
 class ShapeTool extends AbstractTool{
-    public ShapeTool(Runnable action){
-        setOnMouseClicked(e -> action.run());
+    public ShapeTool(SimplePaintObjects ob){
+        this.ob = ob;
+        toolType=1;
+        setOnMouseClicked(e -> activate(this));
     }
+
 }
 
 class ActionTool extends AbstractTool{
     //rectangle, label, action
     Color textColor = SimplePaintObjects.TOOL_FG;
     String text = "Clear";
+    Runnable myClearAction = () -> {
+        //call clear canvas method
+        System.out.println("Clear button pressed");
+    };
 
     javafx.scene.control.Label label;
-    public ActionTool(Runnable action){
+    public ActionTool(){
+        toolType=2;
         label = new Label(text);
         label.setFont(Font.font(null, FontWeight.BOLD, 20));
         label.setTextFill(textColor);
-        setOnMouseClicked(e -> action.run());
+        setOnMouseReleased(e ->activate(this));
+        setOnMousePressed(e -> activate(this));
+
+        setOnMouseClicked(e -> myClearAction.run());
+
 
     }
 }
