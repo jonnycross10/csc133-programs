@@ -114,7 +114,9 @@ public class SimplePaintObjects extends Application {
         ArrayList<AbstractTool> colors = new ArrayList<AbstractTool>();
         for(int i=0; i<7; i++){
             //Question: are these supposed to be ColorTools or just StackPanes
-            ColorTool c = new ColorTool(palette[i],this);
+            ColorTool c = addMouseHandlerColorTool(
+                    new ColorTool(palette[i],this)
+            );
 
             //Rectangle rect = new Rectangle(50,50, c.toolColor);//TODO put in constructor of tool
             c.getChildren().add(c.r);
@@ -125,7 +127,7 @@ public class SimplePaintObjects extends Application {
 
     private StackPane getActionList(){
         //TODO further implementation
-        ActionTool a = new ActionTool();
+        ActionTool a = addMouseHandlerActionTool(new ActionTool());
         a.getChildren().addAll(a.r, a.label);
         return a;
     }
@@ -134,7 +136,9 @@ public class SimplePaintObjects extends Application {
         ArrayList<AbstractTool> shapes = new ArrayList<>();
         Color toolFg = SimplePaintObjects.TOOL_FG;
         for (int i=0; i<8; i++){
-            ShapeTool shape = new ShapeTool(this);
+            ShapeTool shape = addMouseHandlerShapeTool(
+                    new ShapeTool(this)
+            );
             shape.getChildren().add(shape.r);
             Circle circle = new Circle();
             //TODO add a switch case to draw icons and add to shape
@@ -196,6 +200,29 @@ public class SimplePaintObjects extends Application {
         }
         return shapes;
     }
+
+    private ColorTool addMouseHandlerColorTool(ColorTool colorTool){
+        colorTool.setOnMouseClicked((e) ->{
+            colorTool.activate(colorTool);
+        });
+        return colorTool;
+    }
+
+    private ShapeTool addMouseHandlerShapeTool(ShapeTool shapeTool){
+        shapeTool.setOnMouseClicked((e)->{
+            shapeTool.activate(shapeTool);
+        });
+        return shapeTool;
+    }
+
+    private ActionTool addMouseHandlerActionTool(ActionTool actionTool){
+        actionTool.setOnMouseReleased(e ->actionTool.activate(actionTool));
+        actionTool.setOnMousePressed(e -> actionTool.activate(actionTool));
+
+        actionTool.setOnMouseClicked(e -> actionTool.myClearAction.run());
+        return actionTool;
+    }
+
     public AbstractTool getActiveTool(AbstractTool tool){
         return activeTools.get(tool.toolType);
     }
@@ -276,7 +303,7 @@ class ColorTool extends AbstractTool{
         toolType=0;
         this.toolColor = color;
         this.r.setFill(color);
-        setOnMouseClicked(e -> activate(this));
+
     }
 
     public Color getColor(){
@@ -289,7 +316,7 @@ class ShapeTool extends AbstractTool{
     public ShapeTool(SimplePaintObjects ob){
         this.ob = ob;
         toolType=1;
-        setOnMouseClicked(e -> activate(this));
+
     }
 
 }
@@ -309,11 +336,6 @@ class ActionTool extends AbstractTool{
         label = new Label(text);
         label.setFont(Font.font(null, FontWeight.BOLD, 20));
         label.setTextFill(textColor);
-        setOnMouseReleased(e ->activate(this));
-        setOnMousePressed(e -> activate(this));
-
-        setOnMouseClicked(e -> myClearAction.run());
-
 
     }
 }
