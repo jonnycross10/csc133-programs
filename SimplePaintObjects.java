@@ -115,7 +115,7 @@ public class SimplePaintObjects extends Application {
         for(int i=0; i<7; i++){
             //Question: are these supposed to be ColorTools or just StackPanes
             ColorTool c = addMouseHandlerColorTool(
-                    new ColorTool(palette[i],this)
+                    new ColorTool(palette[i])
             );
 
             //Rectangle rect = new Rectangle(50,50, c.toolColor);//TODO put in constructor of tool
@@ -137,7 +137,7 @@ public class SimplePaintObjects extends Application {
         Color toolFg = SimplePaintObjects.TOOL_FG;
         for (int i=0; i<8; i++){
             ShapeTool shape = addMouseHandlerShapeTool(
-                    new ShapeTool(this)
+                    new ShapeTool()
             );
             shape.getChildren().add(shape.r);
             Circle circle = new Circle();
@@ -203,14 +203,25 @@ public class SimplePaintObjects extends Application {
 
     private ColorTool addMouseHandlerColorTool(ColorTool colorTool){
         colorTool.setOnMouseClicked((e) ->{
-            colorTool.activate(colorTool);
+            AbstractTool previousTool = getActiveTool(colorTool);
+            if(colorTool != previousTool){
+                colorTool.deactivate(previousTool, colorTool.toolType);
+                setActiveTool(colorTool);
+                colorTool.activate(colorTool);
+            }
         });
         return colorTool;
     }
 
     private ShapeTool addMouseHandlerShapeTool(ShapeTool shapeTool){
         shapeTool.setOnMouseClicked((e)->{
-            shapeTool.activate(shapeTool);
+            //shape clicked
+            AbstractTool previousTool = getActiveTool(shapeTool);
+            if(shapeTool != previousTool){
+                shapeTool.deactivate(previousTool, shapeTool.toolType);
+                setActiveTool(shapeTool);
+                shapeTool.activate(shapeTool);
+            }
         });
         return shapeTool;
     }
@@ -232,7 +243,7 @@ public class SimplePaintObjects extends Application {
 }
 
 abstract class AbstractTool extends StackPane{
-    SimplePaintObjects ob;
+
     //should be able to set the value of the rectangle
     Color toolBg = SimplePaintObjects.TOOL_RECT_FG;
     Rectangle r = new Rectangle(60,60,toolBg);
@@ -241,24 +252,19 @@ abstract class AbstractTool extends StackPane{
     //TODO add activate method
     public void activate(AbstractTool s){
 
-        ob = s.ob;
+
         System.out.println("Clicked tool type " + s.toolType);
 
 
         //calls getters and setters
-        if(s.toolType ==0 && s !=ob.getActiveTool(s)){
-            //color clicked
-            deactivate(ob.getActiveTool(s), s.toolType);
-            ob.setActiveTool(s);
+        if(s.toolType ==0 ){
+
             //change size of box
             s.r.setStroke(((ColorTool) s).getColor());
             s.r.setStrokeWidth(4);
 
         }
-        else if(s.toolType ==1 && s !=ob.getActiveTool(s)){
-            //tool clicked
-            deactivate(ob.getActiveTool(s), s.toolType);
-            ob.setActiveTool(s);
+        else if(s.toolType ==1){
             //change size of box
             s.r.setStroke(Color.LIGHTCORAL);
             s.r.setStrokeWidth(4);
@@ -298,8 +304,7 @@ abstract class AbstractTool extends StackPane{
 
 class ColorTool extends AbstractTool{
     Color toolColor;
-    public ColorTool(Color color, SimplePaintObjects ob) {
-        this.ob=ob;
+    public ColorTool(Color color) {
         toolType=0;
         this.toolColor = color;
         this.r.setFill(color);
@@ -309,16 +314,21 @@ class ColorTool extends AbstractTool{
     public Color getColor(){
         return toolColor;
     }
+    public ColorTool getColorTool(){
+        return this;
+    }
 
 }
 
 class ShapeTool extends AbstractTool{
-    public ShapeTool(SimplePaintObjects ob){
-        this.ob = ob;
+    ShapeObject shapeObject;
+    ShapeObject getPaintShape(){
+        return shapeObject;
+    }
+    public ShapeTool(){
         toolType=1;
 
     }
-
 }
 
 class ActionTool extends AbstractTool{
@@ -340,11 +350,27 @@ class ActionTool extends AbstractTool{
     }
 }
 
+class PointTool extends ShapeTool{
+
+
+    public PointTool() {
+        super();
+    }
+
+    public void draw(){
+
+    }
+
+
+    public ShapeObject getPaintShape(){
+        return shapeObject;
+    }
+}
+
 interface ShapeObject{
-    ShapeObject currentLineShape = null;
     void draw();
     boolean dragUpdate();
-    ShapeObject getPaintShape();
+
 }
 
 class LineSegmentShape implements ShapeObject{
@@ -358,9 +384,7 @@ class LineSegmentShape implements ShapeObject{
     public void draw(){
 
     }
-    public ShapeObject getPaintShape(){
-        return currentLineShape;
-    }
+
 }
 
 class LineShape implements ShapeObject{
@@ -374,9 +398,7 @@ class LineShape implements ShapeObject{
     public void draw(){
 
     }
-    public ShapeObject getPaintShape(){
-        return currentLineShape;
-    }
+
 }
 
 class FilledPolyShape implements ShapeObject{
@@ -389,14 +411,5 @@ class FilledPolyShape implements ShapeObject{
     public void draw(){
 
     }
-    public ShapeObject getPaintShape(){
-        return currentLineShape;
-    }
 }
 
-//class PointTool extends ShapeTool{
-//
-//    public PointTool(SimplePaintObjects o) {
-//        super(SimplePaintObjects o);
-//    }
-//}
