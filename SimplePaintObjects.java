@@ -197,43 +197,67 @@ public class SimplePaintObjects extends Application {
         ArrayList<AbstractTool> shapes = new ArrayList<>();
         Color toolFg = SimplePaintObjects.TOOL_FG;
         for (int i=0; i<8; i++){
-            ShapeTool shape = addMouseHandlerShapeTool(
-                    new ShapeTool()
-            );
-            shape.getChildren().add(shape.r);
-            Circle circle = new Circle();
+            ShapeTool shape = new ShapeTool(i); //will be set in cases
+            Circle circle;
             //TODO add a switch case to draw icons and add to shape
             switch(i){
 
                 case(0):
                     //add a 2 pixel circle
-
+                    shape = addMouseHandlerShapeTool(
+                            new PointTool(i)
+                    );
+                    shape.getChildren().add(shape.r);
+                    circle = new Circle();
                     circle.setFill(toolFg);
                     circle.setRadius(3);
                     shape.getChildren().add(circle);
                     break;
                 case(1):
+                    shape = addMouseHandlerShapeTool(
+                            new PointTool(i)
+                    );
+                    shape.getChildren().add(shape.r);
+                    circle = new Circle();
                     circle.setFill(toolFg);
                     circle.setRadius(5);
                     shape.getChildren().add(circle);
                     break;
                 case(2):
+                    shape = addMouseHandlerShapeTool(
+                            new PointTool(i)
+                    );
+                    shape.getChildren().add(shape.r);
+                    circle = new Circle();
                     circle.setFill(toolFg);
                     circle.setRadius(8);
                     shape.getChildren().add(circle);
                     break;
                 case(3):
+                    shape = addMouseHandlerShapeTool(
+                            new PointTool(i)
+                    );
+                    shape.getChildren().add(shape.r);
+                    circle = new Circle();
                     circle.setFill(toolFg);
                     circle.setRadius(12);
                     shape.getChildren().add(circle);
                     break;
                 case(4):
+                    shape = addMouseHandlerShapeTool(
+                            new LineTool(i)
+                    );
+                    shape.getChildren().add(shape.r);
                     Line line = new Line(0,0,40,40);
                     line.setStrokeWidth(3);
                     line.setStroke(toolFg);
                     shape.getChildren().add(line);
                     break;
                 case(5):
+                    shape = addMouseHandlerShapeTool(
+                            new RectangleTool(i)
+                    );
+                    shape.getChildren().add(shape.r);
                     Rectangle rectangle = new Rectangle();
                     rectangle.setWidth(40);
                     rectangle.setHeight(40);
@@ -241,11 +265,20 @@ public class SimplePaintObjects extends Application {
                     shape.getChildren().add(rectangle);
                     break;
                 case(6):
+                    shape = addMouseHandlerShapeTool(
+                            new OvalTool(i)
+                    );
+                    shape.getChildren().add(shape.r);
+                    circle = new Circle();
                     circle.setFill(toolFg);
                     circle.setRadius(20);
                     shape.getChildren().add(circle);
                     break;
                 case(7):
+                    shape = addMouseHandlerShapeTool(
+                            new RoundedRectangleTool(i)
+                    );
+                    shape.getChildren().add(shape.r);
                     Rectangle roundRectangle = new Rectangle();
                     roundRectangle.setWidth(45);
                     roundRectangle.setHeight(45);
@@ -270,6 +303,7 @@ public class SimplePaintObjects extends Application {
                 setActiveTool(colorTool);
                 colorTool.activate(colorTool);
             }
+
         });
         return colorTool;
     }
@@ -283,6 +317,7 @@ public class SimplePaintObjects extends Application {
                 setActiveTool(shapeTool);
                 shapeTool.activate(shapeTool);
             }
+            System.out.println("tool clicked: " + shapeTool.getToolIndex());
         });
         return shapeTool;
     }
@@ -313,9 +348,7 @@ abstract class AbstractTool extends StackPane{
     //TODO add activate method
     public void activate(AbstractTool s){
 
-
         System.out.println("Clicked tool type " + s.toolType);
-
 
         //calls getters and setters
         if(s.toolType ==0 ){
@@ -334,12 +367,10 @@ abstract class AbstractTool extends StackPane{
         else if(s.toolType ==2){
             //clear clicked
             if(!clearClicked){
-                System.out.println("if");
                 s.r.setStroke(Color.LIGHTCORAL);
                 s.r.setStrokeWidth(2);
             }
             else{
-                System.out.println("else");
                 s.r.setFill(Color.LIGHTCORAL);
                 s.r.setStrokeWidth(0);
             }
@@ -382,13 +413,17 @@ class ColorTool extends AbstractTool{
 }
 
 class ShapeTool extends AbstractTool{
+    int toolIndex;
     ShapeObject shapeObject;
     ShapeObject getPaintShape(){
         return shapeObject;
     }
-    public ShapeTool(){
+    public ShapeTool(int toolIndex){
         toolType=1;
-
+        this.toolIndex = toolIndex;
+    }
+    public int getToolIndex(){
+        return toolIndex;
     }
 }
 
@@ -414,8 +449,8 @@ class ActionTool extends AbstractTool{
 
 class PointTool extends ShapeTool{
 
-    public PointTool() {
-        super();
+    public PointTool(int toolIndex){
+        super(toolIndex);
     }
 
     public void draw(GraphicsContext g, int width, Color color, Point2D start,
@@ -430,11 +465,14 @@ class PointTool extends ShapeTool{
 }
 
 class LineTool extends ShapeTool{
-    public LineTool(GraphicsContext g, Color color, Point2D start, Point2D end){
-        super();
+
+    public LineTool(int toolIndex){
+        super(toolIndex);
     }
-    public void draw(){
+
+    public void draw(GraphicsContext g, Color color, Point2D start, Point2D end){
         shapeObject = new LineShape();
+        shapeObject.draw(g);
     }
     public ShapeObject getPaintShape(){
         return shapeObject;
@@ -442,8 +480,8 @@ class LineTool extends ShapeTool{
 }
 
 class RectangleTool extends ShapeTool{
-    public RectangleTool(){
-        super();
+    public RectangleTool(int i){
+        super(i);
     }
     public void draw(){
         shapeObject = new RectangleShape();
@@ -454,8 +492,8 @@ class RectangleTool extends ShapeTool{
 }
 
 class OvalTool extends ShapeTool{
-    public OvalTool(){
-        super();
+    public OvalTool(int i){
+        super(i);
     }
     public void draw(){
         shapeObject = new OvalShape();
@@ -466,8 +504,8 @@ class OvalTool extends ShapeTool{
 }
 
 class RoundedRectangleTool extends ShapeTool{
-    public RoundedRectangleTool(){
-        super();
+    public RoundedRectangleTool(int toolIndex){
+        super(toolIndex);
     }
     public void draw(){
         shapeObject = new RoundedRectangleShape();
