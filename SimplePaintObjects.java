@@ -29,12 +29,16 @@ public class SimplePaintObjects extends Application {
     public ArrayList<AbstractTool> activeTools = new
             ArrayList<>(); //TODO sorry
 
-    public ArrayList<ShapeObject> shapeObjectArrayList = new
+    public ArrayList<ShapeObject> shapeList = new
             ArrayList<>();
+
+    public Point2D initialClick;
 
     public static void main(String[] args) {
         launch(args);
     }
+
+    public ShapeObject currentShape;
 
     //we can create a transparent canvas on top of our regular canvas
     //while drawing it's on transparent
@@ -145,30 +149,121 @@ public class SimplePaintObjects extends Application {
     Runnable myClearAction = () -> {
         //call clear canvas method
         clearCanvas();
+        shapeList = new ArrayList<>();
         System.out.println("Clear button pressed");
     };
 
     public void mousePressed(MouseEvent e){
         //store mouse event meta data
         //get the current tool
+        //clearCanvas();
+        ShapeTool currentTool = (ShapeTool) getActiveTool(1);
+        int currentToolIndex = currentTool.getToolIndex();
+        ColorTool currentColorObject = (ColorTool) getActiveTool(0);
+        Color currentColor = currentColorObject.getColor();
+        System.out.println("Tool: " + currentToolIndex);
+        System.out.println("Color: " + currentColor.toString());
+
+        initialClick = new Point2D(e.getX(),e.getY());
         System.out.println("initial click");
     }
 
     public void mouseDragged(MouseEvent e){
-        //store mouse event meta data
+        //update mouse event meta data
         //get the current tool
         //clear canvas
         //check draggedUpdate thingy
-        //if true get object and commit object to shape array
+        //if true draw object
         //else just call current tool's draw
+        clearCanvas();
+
+        //draw all the previous objects
+        for (int i=0;i<shapeList.size();i++){
+            shapeList.get(i).draw(g);
+        }
+
+        ShapeTool currentTool = (ShapeTool) getActiveTool(1);
+        int currentToolIndex = currentTool.getToolIndex();
+        ColorTool currentColorObject = (ColorTool) getActiveTool(0);
+        Color currentColor = currentColorObject.getColor();
+        Point2D currentPoint = new Point2D(e.getX(),e.getY());
+        //switch case on tool index
+        ShapeObject newShape;
+        switch (currentToolIndex){
+            case(0):
+                //first 4 should be the only one here that commits the shape
+                //order of draw and get paint shape matters
+                PointTool p1 = (PointTool) currentTool;
+                p1.draw(g, 3, currentColor, initialClick,currentPoint);
+                newShape = currentTool.getPaintShape();
+                shapeList.add(newShape);
+                initialClick = currentPoint;
+                break;
+            case(1):
+                PointTool p2 = (PointTool) currentTool;
+                p2.draw(g, 5, currentColor, initialClick,currentPoint);
+                newShape = currentTool.getPaintShape();
+                shapeList.add(newShape);
+                initialClick = currentPoint;
+                break;
+            case(2):
+                PointTool p3 = (PointTool) currentTool;
+                p3.draw(g, 8, currentColor, initialClick,currentPoint);
+                newShape = currentTool.getPaintShape();
+                shapeList.add(newShape);
+                initialClick = currentPoint;
+                break;
+            case(3):
+                PointTool p4 = (PointTool) currentTool;
+                p4.draw(g, 12, currentColor, initialClick,currentPoint);
+                newShape = currentTool.getPaintShape();
+                shapeList.add(newShape);
+                initialClick = currentPoint;
+                break;
+            case(4):
+                LineTool l = (LineTool) currentTool;
+                l.draw(g,currentColor,initialClick,currentPoint);
+                newShape = currentTool.getPaintShape();
+                currentShape = newShape;
+                break;
+            case(5):
+                RectangleTool r = (RectangleTool) currentTool;
+                r.draw(g,currentColor,initialClick,currentPoint);
+                newShape = currentTool.getPaintShape();
+                currentShape = newShape;
+                break;
+            case(6):
+                OvalTool o = (OvalTool) currentTool;
+                o.draw(g,currentColor,initialClick,currentPoint);
+                newShape = currentTool.getPaintShape();
+                currentShape = newShape;
+                break;
+            case(7):
+                RoundedRectangleTool ro = (RoundedRectangleTool) currentTool;
+                ro.draw(g,currentColor,initialClick,currentPoint);
+                newShape = currentTool.getPaintShape();
+                currentShape = newShape;
+                break;
+        }
+
+
         System.out.println("mouse dragging");
     }
 
     public void mouseReleased(MouseEvent e){
         //check draggedupdate is false
         //get tool from
-        //reset mouse data?
+        //reset initial click
         System.out.println("mouse released");
+        if(currentShape==null){return;}
+        if(currentShape.dragUpdate()){return;}
+        shapeList.add(currentShape);
+
+        clearCanvas();
+        for (int i=0;i<shapeList.size();i++){
+            shapeList.get(i).draw(g);
+        }
+
     }
 
     private ArrayList<AbstractTool> getColorList(){
@@ -297,7 +392,7 @@ public class SimplePaintObjects extends Application {
 
     private ColorTool addMouseHandlerColorTool(ColorTool colorTool){
         colorTool.setOnMouseClicked((e) ->{
-            AbstractTool previousTool = getActiveTool(colorTool);
+            AbstractTool previousTool = getActiveTool(colorTool.toolType);
             if(colorTool != previousTool){
                 colorTool.deactivate(previousTool, colorTool.toolType);
                 setActiveTool(colorTool);
@@ -311,7 +406,7 @@ public class SimplePaintObjects extends Application {
     private ShapeTool addMouseHandlerShapeTool(ShapeTool shapeTool){
         shapeTool.setOnMouseClicked((e)->{
             //shape clicked
-            AbstractTool previousTool = getActiveTool(shapeTool);
+            AbstractTool previousTool = getActiveTool(shapeTool.toolType);
             if(shapeTool != previousTool){
                 shapeTool.deactivate(previousTool, shapeTool.toolType);
                 setActiveTool(shapeTool);
@@ -330,8 +425,8 @@ public class SimplePaintObjects extends Application {
         return actionTool;
     }
 
-    public AbstractTool getActiveTool(AbstractTool tool){
-        return activeTools.get(tool.toolType);
+    public AbstractTool getActiveTool(int toolType){
+        return activeTools.get(toolType);
     }
     public void setActiveTool(AbstractTool tool){
         activeTools.set(tool.toolType, tool);
@@ -425,6 +520,7 @@ class ShapeTool extends AbstractTool{
     public int getToolIndex(){
         return toolIndex;
     }
+
 }
 
 class ActionTool extends AbstractTool{
@@ -471,7 +567,7 @@ class LineTool extends ShapeTool{
     }
 
     public void draw(GraphicsContext g, Color color, Point2D start, Point2D end){
-        shapeObject = new LineShape();
+        shapeObject = new LineShape(color,start,end);
         shapeObject.draw(g);
     }
     public ShapeObject getPaintShape(){
@@ -483,8 +579,10 @@ class RectangleTool extends ShapeTool{
     public RectangleTool(int i){
         super(i);
     }
-    public void draw(){
-        shapeObject = new RectangleShape();
+    public void draw(GraphicsContext g, Color color, Point2D start, Point2D end){
+
+        shapeObject = new RectangleShape(color,start,end);
+        shapeObject.draw(g);
     }
     public ShapeObject getPaintShape(){
         return shapeObject;
@@ -495,8 +593,9 @@ class OvalTool extends ShapeTool{
     public OvalTool(int i){
         super(i);
     }
-    public void draw(){
-        shapeObject = new OvalShape();
+    public void draw(GraphicsContext g, Color color, Point2D start, Point2D end){
+        shapeObject = new OvalShape(color,start,end);
+        shapeObject.draw(g);
     }
     public ShapeObject getPaintShape(){
         return shapeObject;
@@ -507,8 +606,9 @@ class RoundedRectangleTool extends ShapeTool{
     public RoundedRectangleTool(int toolIndex){
         super(toolIndex);
     }
-    public void draw(){
-        shapeObject = new RoundedRectangleShape();
+    public void draw(GraphicsContext g, Color color, Point2D start, Point2D end){
+        shapeObject = new RoundedRectangleShape(color,start,end);
+        shapeObject.draw(g);
     }
     public ShapeObject getPaintShape(){
         return shapeObject;
@@ -550,23 +650,35 @@ class LineSegmentShape implements ShapeObject{
 }
 
 class LineShape implements ShapeObject{
-    public LineShape(){
-
+    Color color;
+    Point2D start;
+    Point2D end;
+    public LineShape(Color color, Point2D start, Point2D end){
+        this.color = color;
+        this.start = start;
+        this.end = end;
     }
     public boolean dragUpdate(){
         return false;
     }
 
     public void draw(GraphicsContext g){
-
+        g.setStroke(color);
+        g.setLineWidth(5);
+        g.strokeLine(start.getX(), start.getY(), end.getX(), end.getY());
     }
 
 }
 //parent class to a few shape objects
 class FilledPolyShape implements ShapeObject{
     //corrects the size of the polygon
-    public FilledPolyShape(){
-
+    Color color;
+    Point2D start;
+    Point2D end;
+    public FilledPolyShape(Color color, Point2D start, Point2D end){
+        this.color = color;
+        this.start = start;
+        this.end = end;
     }
     public boolean dragUpdate(){
         return false;
@@ -577,21 +689,59 @@ class FilledPolyShape implements ShapeObject{
 }
 
 class RectangleShape extends FilledPolyShape{
-
-    public void draw(){
-
+    public RectangleShape(Color color, Point2D start, Point2D end){
+        super(color, start, end);
+    }
+    public void draw(GraphicsContext g){
+        //need to offset so start in middle and bottom R corner is on mouse
+        double startX = start.getX();
+        double startY = start.getY();
+        double endX = end.getX();
+        double endY = end.getY();
+        double width = Math.abs(endX-startX);
+        double height = Math.abs(endY-startY);
+        double x = startX -  width;
+        double y = startY - height;
+        g.setFill(color);
+        g.fillRect(x,y,2*width,2*height);
     }
 
 }
 
 class OvalShape extends FilledPolyShape{
-    public void draw(){
+    public OvalShape(Color color, Point2D start, Point2D end){
+        super(color, start, end);
+    }
+    public void draw(GraphicsContext g){
+        double startX = start.getX();
+        double startY = start.getY();
+        double endX = end.getX();
+        double endY = end.getY();
+        double width = Math.abs(endX-startX);
+        double height = Math.abs(endY-startY);
 
+        double x = startX - (width);
+        double y = startY - (height);
+
+        g.setFill(color);
+        g.fillOval(x,y,2*width,2*height);
     }
 }
 
 class RoundedRectangleShape extends FilledPolyShape{
-    public void draw(){
-
+    public RoundedRectangleShape(Color color, Point2D start, Point2D end){
+        super(color, start, end);
+    }
+    public void draw(GraphicsContext g){
+        double startX = start.getX();
+        double startY = start.getY();
+        double endX = end.getX();
+        double endY = end.getY();
+        double width = Math.abs(endX-startX);
+        double height = Math.abs(endY-startY);
+        double x = startX -  width;
+        double y = startY - height;
+        g.setFill(color);
+        g.fillRoundRect(x,y,2*width,2*height,20,20);
     }
 }
