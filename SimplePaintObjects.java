@@ -50,7 +50,6 @@ public class SimplePaintObjects extends Application {
     static final Color TOOL_RECT_FG = Color.LIGHTCORAL;
     static final Color TOOL_RECT_BG = Color.WHITE;
     static final Color TOOL_FG = Color.LEMONCHIFFON;
-    static final int CELL_W = 60;
     static final int PADDING = 5;
 
 
@@ -83,11 +82,11 @@ public class SimplePaintObjects extends Application {
         colorBox.setSpacing(PADDING);
         colorBox.setPadding(new Insets(5,5,5,5));
 
-        toolBox.setBackground(new Background(new BackgroundFill(Color.WHITE,
+        toolBox.setBackground(new Background(new BackgroundFill(TOOL_RECT_BG,
                 CornerRadii.EMPTY,
                 Insets.EMPTY)));
 
-        colorBox.setBackground(new Background(new BackgroundFill(Color.WHITE,
+        colorBox.setBackground(new Background(new BackgroundFill(TOOL_RECT_BG,
                 CornerRadii.EMPTY,
                 Insets.EMPTY)));
 
@@ -142,7 +141,7 @@ public class SimplePaintObjects extends Application {
         int width = (int)mainCanvas.getWidth();    // Width of the canvas.
         int height = (int)mainCanvas.getHeight();  // Height of the canvas.
 
-        g.setFill(Color.WHITE);
+        g.setFill(TOOL_RECT_BG);
         g.fillRect(0,0,width,height);
     }
 
@@ -274,7 +273,7 @@ public class SimplePaintObjects extends Application {
                     new ColorTool(palette[i])
             );
 
-            //Rectangle rect = new Rectangle(50,50, c.toolColor);//TODO put in constructor of tool
+
             c.getChildren().add(c.r);
             colors.add(c);
         }
@@ -566,7 +565,8 @@ class LineTool extends ShapeTool{
         super(toolIndex);
     }
 
-    public void draw(GraphicsContext g, Color color, Point2D start, Point2D end){
+    public void draw(GraphicsContext g,
+                     Color color, Point2D start, Point2D end){
         shapeObject = new LineShape(color,start,end);
         shapeObject.draw(g);
     }
@@ -579,7 +579,8 @@ class RectangleTool extends ShapeTool{
     public RectangleTool(int i){
         super(i);
     }
-    public void draw(GraphicsContext g, Color color, Point2D start, Point2D end){
+    public void draw(GraphicsContext g,
+                     Color color, Point2D start, Point2D end){
 
         shapeObject = new RectangleShape(color,start,end);
         shapeObject.draw(g);
@@ -593,7 +594,8 @@ class OvalTool extends ShapeTool{
     public OvalTool(int i){
         super(i);
     }
-    public void draw(GraphicsContext g, Color color, Point2D start, Point2D end){
+    public void draw(GraphicsContext g,
+                     Color color, Point2D start, Point2D end){
         shapeObject = new OvalShape(color,start,end);
         shapeObject.draw(g);
     }
@@ -606,7 +608,8 @@ class RoundedRectangleTool extends ShapeTool{
     public RoundedRectangleTool(int toolIndex){
         super(toolIndex);
     }
-    public void draw(GraphicsContext g, Color color, Point2D start, Point2D end){
+    public void draw(GraphicsContext g,
+                     Color color, Point2D start, Point2D end){
         shapeObject = new RoundedRectangleShape(color,start,end);
         shapeObject.draw(g);
     }
