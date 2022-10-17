@@ -59,11 +59,11 @@ public class MyPong extends Application {
         model.getChildren().add(fpsLabel);
 
         AnimationTimer loop = new AnimationTimer() {
-            Affine rotation = new Affine();
+            Rotate rotation = new Rotate();
             int ticks = 0;
             double old = -1;
-            double ballAngle = Math.toRadians(270); //TODO change to 270
-            double ballMagnitude = 1; //TODO scale velocity by frametime?
+            double ballAngle = Math.toRadians(270);
+            double ballMagnitude = 1;
             @Override
             public void handle(long now) {
                 Point p = MouseInfo.getPointerInfo().getLocation();
@@ -77,8 +77,7 @@ public class MyPong extends Application {
                 Point2D centerCoords = getBallCenterCoords(ball);
                 double ballCenterX = centerCoords.getX();
                 double ballCenterY = centerCoords.getY();
-                System.out.println(ballMinX + ": " + ballMinY + "\n" + ballMaxX +
-                        ": " + ballMaxY + "\n" + ballCenterX + ": " + ballCenterY + "\n");
+
                 double ball_x_angle = (Math.round(Math.cos(ballAngle)
                         * Math.pow(10, 3)) / Math.pow(10, 3));
                 double ball_y_angle = (Math.round(Math.sin(ballAngle)
@@ -93,7 +92,9 @@ public class MyPong extends Application {
                 }
                 if (delta == 0){
                     fpsLabel.setText(String.valueOf(delta));
-                    restart(ballGroup);
+                    restart(ballGroup, ball, rotation, ballCenterX,ballCenterY);
+                    //double oldRot = rotation.getAngle();
+                    rotation.setAngle(0);
                 }
                 //collisions
                 if(!Shape.intersect(bat,ball).getBoundsInLocal().isEmpty()){
@@ -103,9 +104,9 @@ public class MyPong extends Application {
                     if(!batCollision) {
                         double speed = batSpeed();
                         ballAngle = handleHitTrajectory(ballAngle, speed);
-                        rotation = handleHitRotation(ballCenterX,ballCenterY,speed, ballAngle);
+                        rotation = handleHitRotation(ballCenterX,ballCenterY,speed, rotation);
                         batCollision=true;
-                        ballMagnitude++;
+                        ballMagnitude+=.5;
                     }
 
                     //ballAngle = ballAngle-Math.toRadians(180);
@@ -122,7 +123,7 @@ public class MyPong extends Application {
                             ballAngle = Math.toRadians(180) - ballAngle % Math.toRadians(360);
                         }
                         sideCollision = true;
-                        ballMagnitude++;
+                        ballMagnitude+=.5;
                     }
                 }
                 else if(ballMaxX>APP_W - 55){ //right collision 2px padding
@@ -136,7 +137,7 @@ public class MyPong extends Application {
                             ballAngle = Math.toRadians(180) - ballAngle % Math.toRadians(360);
                         }
                         sideCollision = true;
-                        ballMagnitude++;
+                        ballMagnitude+=.5;
                     }
                 }
                 else if(ballMinY<50){
@@ -152,13 +153,15 @@ public class MyPong extends Application {
                             ballAngle = ballAngle + Math.toRadians(180);
                         }
                         ceilingCollision= true;
-                        ballMagnitude++;
+                        ballMagnitude+=.5;
                     }
 
                 }
                 else if(ballMaxY > APP_H){
                     //ball misses bat
-                    restart(ballGroup);
+
+                    restart(ballGroup, ball, rotation, ballCenterX, ballCenterY);
+                    rotation = new Rotate(0);
                     ballMagnitude =1;
                     ballAngle = Math.toRadians(270);
                 }
@@ -183,11 +186,15 @@ public class MyPong extends Application {
         primaryStage.show();
     }
 
-    private Affine handleHitRotation(double ballX, double ballY, double speed, double ballAngle) {
+    private Rotate handleHitRotation(double ballX, double ballY, double speed, Rotate rot) {
+        if (speed ==0){
+            return rot;
+        }
         double angleConstant = speed *.1;
         Rotate rotation = new Rotate(angleConstant,ballX,ballY);
-        Affine aff = new Affine(rotation);
-        return aff;
+        System.out.println(ballX + ": " + ballY);
+
+        return rotation;
     }
 
     private double handleHitTrajectory(double ballAngle, double speed) {
@@ -243,16 +250,31 @@ public class MyPong extends Application {
     }
 
     // restarts ball from random point at top of screen
-    public void restart(Group ball){
+    public void restart(Group ball, Rectangle b, Rotate rotation, double centerX, double centerY){
+        b.getTransforms().removeAll();
         mouseSpeedList.clear();
         Random rand = new Random();
         //100 for padding 50 for ball width 1 in case max value
         int newStartX = rand.nextInt(APP_W-200)+50;
-
         Bounds bounds = ball.getBoundsInParent();
+        centerX = bounds.getCenterX();
+        centerY = bounds.getCenterY();
+        double xx = b.getLocalToSceneTransform().getMxx();
+        double xy = b.getLocalToSceneTransform().getMxy();
+        double angle = Math.atan2(-xy, xx);
+        double newAngle = Math.toDegrees(angle)*-1;
+
+        System.out.println("angle: " + newAngle + "\nnewX: " + centerX + "\nnewY: " + centerY);
+        b.getTransforms().addAll(new Rotate(newAngle,centerX,centerY));
+
+        bounds = ball.getBoundsInParent();
         double x = bounds.getMinX();
         double y = bounds.getMinY();
-        ball.getTransforms().addAll(new Translate(newStartX-x,100-y));
+        double newX = newStartX-x;
+        double newY = 100-y;
+        ball.getTransforms().addAll(new Translate(newX,newY));
+
+
 
     }
 
@@ -261,7 +283,7 @@ public class MyPong extends Application {
         bat.setX(offset);
     }
 
-    public void moveBall(Rectangle ball, Group ballGroup, double angle, double magnitude, Affine rotation){
+    public void moveBall(Rectangle ball, Group ballGroup, double angle, double magnitude, Rotate rotation){
         //round the trig evaluation bc radians are not 100% accurate
 
         double newX = (Math.round(Math.cos(angle)
@@ -270,8 +292,9 @@ public class MyPong extends Application {
         double newY = (Math.round(Math.sin(angle)
                 * Math.pow(10, 3)) / Math.pow(10, 3))* magnitude *-1;
 
-        ballGroup.getTransforms().addAll(new Translate(newX,newY));
         ball.getTransforms().addAll(rotation);
+        ballGroup.getTransforms().addAll(new Translate(newX,newY));
+
 
     }
     public Point2D getMinBallCoords(Group ball){
