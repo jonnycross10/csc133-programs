@@ -15,6 +15,7 @@ import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import org.w3c.dom.css.Rect;
 
+import javax.sound.midi.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.util.ArrayList;
@@ -28,6 +29,8 @@ public class MyPong extends Application {
     private boolean batCollision = false;
     private boolean ceilingCollision = false;
     private boolean sideCollision = false;
+    private boolean showLabel = true;
+    private boolean soundOn = true;
     private ArrayList<Double> mouseSpeedList = new ArrayList<>();
     private int score =0;
 
@@ -45,6 +48,8 @@ public class MyPong extends Application {
     public void start(Stage primaryStage) {
         Group model = new Group();
         Scene scene = new Scene(model,APP_W,APP_H);
+
+        BinkBonkSound bink = new BinkBonkSound();
 
         Rectangle bat = new Rectangle(200,575, 200,25);
         Rectangle ball = new Rectangle(100,100,50,50);
@@ -91,8 +96,14 @@ public class MyPong extends Application {
 
                 if(old<0) old =now;
                 double delta = (now-old)/1e9;
-                if(ticks%50 ==0) {
-                    fpsLabel.setText(String.format(" %.3f", frameRate) + "avg fps");
+                if(ticks%50 ==0 && showLabel) {
+                    fpsLabel.setText(String.format(" %.3f", frameRate) + " avg fps "
+                    + String.format(" %.2f", 1000*(1/frameRate)) + " FT(ms) "
+                    + String.format(" %.0f", delta) + " Game Time");
+                    fpsLabel.setVisible(true);
+                }
+                else if(ticks%50 ==0 && !showLabel){
+                    fpsLabel.setVisible(false);
                 }
                 scoreLabel.setText(String.valueOf(score));
                 if (delta == 0){
@@ -113,6 +124,7 @@ public class MyPong extends Application {
                         batCollision=true;
                         ballMagnitude+=.5;
                         score++;
+                        if(soundOn) bink.play(true);
                     }
 
                     //ballAngle = ballAngle-Math.toRadians(180);
@@ -130,6 +142,8 @@ public class MyPong extends Application {
                         }
                         sideCollision = true;
                         ballMagnitude+=.5;
+                        score++;
+                        if(soundOn) bink.play(true);
                     }
                 }
                 else if(ballMaxX>APP_W - 55){ //right collision 2px padding
@@ -145,6 +159,7 @@ public class MyPong extends Application {
                         sideCollision = true;
                         ballMagnitude+=.5;
                         score++;
+                        if(soundOn) bink.play(true);
                     }
                 }
                 else if(ballMinY<50){
@@ -162,6 +177,7 @@ public class MyPong extends Application {
                         ceilingCollision= true;
                         ballMagnitude+=.5;
                         score++;
+                        if(soundOn) bink.play(true);
                     }
 
                 }
@@ -191,9 +207,27 @@ public class MyPong extends Application {
         };
         loop.start();
 
-        scene.setOnMouseMoved(event -> {
-            moveBat(event.getX(), bat);
+        scene.setOnMouseExited(event ->{
+            bat.setFill(Color.RED);
+        });
 
+        scene.setOnMouseEntered(event ->{
+            bat.setFill(Color.BLACK);
+        });
+
+        scene.setOnMouseMoved(event -> {
+            double x = event.getX();
+            double y = event.getY();
+            moveBat(x, bat);
+
+        });
+        scene.setOnKeyReleased(event -> {
+            if(event.getText().equals("i")){
+                showLabel = !showLabel;
+            }
+            else if(event.getText().equals("s")){
+                soundOn = !soundOn;
+            }
         });
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -337,5 +371,85 @@ public class MyPong extends Application {
         double y = bounds.getCenterY();
         Point2D coords = new Point2D(x,y);
         return coords;
+    }
+}
+class BinkBonkSound {
+
+    // magic numbers that are not common knowledge unless one
+    // has studied the GM2 standard and the midi sound system
+    //
+    // The initials GM mean General Midi. This GM standard
+    // provides for a set of common sounds that respond
+    // to midi messages in a common way.
+    //
+    // MIDI is a standard for the encoding and transmission
+    // of musical sound meta-information, e.g., play this
+    // note on this instrument at this level and this pitch
+    // for this long.
+    //
+    private static final int MAX_PITCH_BEND = 16383;
+    private static final int MIN_PITCH_BEND = 0;
+    private static final int REVERB_LEVEL_CONTROLLER = 91;
+    private static final int MIN_REVERB_LEVEL = 0;
+    private static final int MAX_REVERB_LEVEL = 127;
+    private static final int DRUM_MIDI_CHANNEL = 9;
+    private static final int CLAVES_NOTE = 76;
+    private static final int NORMAL_VELOCITY = 100;
+    private static final int MAX_VELOCITY = 127;
+
+    Instrument[] instrument;
+    MidiChannel[] midiChannels;
+    boolean playSound;
+
+    public BinkBonkSound(){
+        playSound=true;
+        try{
+            Synthesizer gmSynthesizer = MidiSystem.getSynthesizer();
+            gmSynthesizer.open();
+            instrument = gmSynthesizer.getDefaultSoundbank().getInstruments();
+            midiChannels = gmSynthesizer.getChannels();
+
+        } catch (MidiUnavailableException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // This method has more comments than would typically be needed for
+    // programmers using the Java sound system libraries. This is because
+    // most students will not have exposure to the specifics of midi and
+    // the general midi sound system. For example, drums are on channel
+    // 10 and this cannot be changed. The GM2 standard defines much of
+    // the detail that I have chosen to use static constants to encode.
+    //
+    // The use of midi to play sounds allows us to avoid using external
+    // media, e.g., wav files, to play sounds in the game.
+    //
+    void play(boolean hiPitch){
+        if(playSound) {
+
+            // Midi pitch bend is required to play a single drum note
+            // at different pitches. The high and low pongs are two
+            // octaves apart. As you recall from high school physics,
+            // each additional octave doubles the frequency.
+            //
+            midiChannels[DRUM_MIDI_CHANNEL]
+                    .setPitchBend(hiPitch ? MAX_PITCH_BEND : MIN_PITCH_BEND);
+
+            // Turn the reverb send fully off. Drum sounds play until they
+            // decay completely. Reverb extends the audible decay and,
+            // from a gameplay point of view, is distracting.
+            //
+            midiChannels[DRUM_MIDI_CHANNEL]
+                    .controlChange(REVERB_LEVEL_CONTROLLER, MIN_REVERB_LEVEL);
+
+            // Play the claves on the drum channel at a "normal" volume
+            //
+            midiChannels[DRUM_MIDI_CHANNEL]
+                    .noteOn(CLAVES_NOTE, NORMAL_VELOCITY);
+        }
+    }
+
+    public void toggleSound() {
+        playSound = !playSound;
     }
 }
