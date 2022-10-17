@@ -29,6 +29,7 @@ public class MyPong extends Application {
     private boolean ceilingCollision = false;
     private boolean sideCollision = false;
     private ArrayList<Double> mouseSpeedList = new ArrayList<>();
+    private int score =0;
 
     private static final int APP_W = 600;
     private static final int APP_H = 600;
@@ -56,7 +57,10 @@ public class MyPong extends Application {
 
         Label fpsLabel = new Label();
         fpsLabel.setTranslateX(2);
-        model.getChildren().add(fpsLabel);
+
+        Label scoreLabel = new Label();
+        scoreLabel.setTranslateX(APP_W/2);
+        model.getChildren().addAll(fpsLabel, scoreLabel);
 
         AnimationTimer loop = new AnimationTimer() {
             Rotate rotation = new Rotate();
@@ -90,9 +94,10 @@ public class MyPong extends Application {
                 if(ticks%50 ==0) {
                     fpsLabel.setText(String.format(" %.3f", frameRate) + "avg fps");
                 }
+                scoreLabel.setText(String.valueOf(score));
                 if (delta == 0){
                     fpsLabel.setText(String.valueOf(delta));
-                    restart(ballGroup, ball, rotation, ballCenterX,ballCenterY);
+                    restart(ballGroup, ball);
                     //double oldRot = rotation.getAngle();
                     rotation.setAngle(0);
                 }
@@ -107,6 +112,7 @@ public class MyPong extends Application {
                         rotation = handleHitRotation(ballCenterX,ballCenterY,speed, rotation);
                         batCollision=true;
                         ballMagnitude+=.5;
+                        score++;
                     }
 
                     //ballAngle = ballAngle-Math.toRadians(180);
@@ -138,6 +144,7 @@ public class MyPong extends Application {
                         }
                         sideCollision = true;
                         ballMagnitude+=.5;
+                        score++;
                     }
                 }
                 else if(ballMinY<50){
@@ -154,16 +161,22 @@ public class MyPong extends Application {
                         }
                         ceilingCollision= true;
                         ballMagnitude+=.5;
+                        score++;
                     }
 
                 }
                 else if(ballMaxY > APP_H){
                     //ball misses bat
+                    score = 0;
+                    restart(ballGroup, ball);
 
-                    restart(ballGroup, ball, rotation, ballCenterX, ballCenterY);
-                    rotation = new Rotate(0);
+                    centerCoords = getBallCenterCoords(ball);
+                    rotation.setAngle(0);
+                    rotation.setPivotX(centerCoords.getX());
+                    rotation.setPivotY(centerCoords.getY());
                     ballMagnitude =1;
                     ballAngle = Math.toRadians(270);
+                    return;
                 }
                 else{
                     //no collision
@@ -250,31 +263,36 @@ public class MyPong extends Application {
     }
 
     // restarts ball from random point at top of screen
-    public void restart(Group ball, Rectangle b, Rotate rotation, double centerX, double centerY){
-        b.getTransforms().removeAll();
+    public void restart(Group ball, Rectangle b){
+        //b.getTransforms().removeAll();
         mouseSpeedList.clear();
         Random rand = new Random();
         //100 for padding 50 for ball width 1 in case max value
         int newStartX = rand.nextInt(APP_W-200)+50;
+
+
         Bounds bounds = ball.getBoundsInParent();
-        centerX = bounds.getCenterX();
-        centerY = bounds.getCenterY();
-        double xx = b.getLocalToSceneTransform().getMxx();
-        double xy = b.getLocalToSceneTransform().getMxy();
-        double angle = Math.atan2(-xy, xx);
-        double newAngle = Math.toDegrees(angle)*-1;
-
-        System.out.println("angle: " + newAngle + "\nnewX: " + centerX + "\nnewY: " + centerY);
-        b.getTransforms().addAll(new Rotate(newAngle,centerX,centerY));
-
-        bounds = ball.getBoundsInParent();
         double x = bounds.getMinX();
         double y = bounds.getMinY();
+
         double newX = newStartX-x;
         double newY = 100-y;
         ball.getTransforms().addAll(new Translate(newX,newY));
 
 
+        Bounds bound = ball.getBoundsInParent();
+        System.out.println("\nnewX: " + bound.getMinX() + "\nnewY: " + bound.getMaxY());
+        double centerX = bound.getCenterX();
+        double centerY = bound.getCenterY();
+        double xx = ball.getLocalToSceneTransform().getMxx();
+        double xy = ball.getLocalToSceneTransform().getMxy();
+        double angle = Math.atan2(-xy, xx);
+        System.out.println(angle);
+        double newAngle = Math.toDegrees(angle)*-1;
+        ball.getTransforms().addAll(new Rotate(newAngle,centerX,centerY));
+
+        System.out.println("\nX: " + x + "\nY: " + y);
+        System.out.println("\nnewX: " + bound.getMinX()+ "\nnewY: " + bound.getMinY());
 
     }
 
